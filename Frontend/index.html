@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookShelf-Online Bookstore Website</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <div class="logo">Book<span>Shelf</span></div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="nav-link" data-page="home">Home</a></li>
+                    <li><a href="#" class="nav-link" data-page="profile">Profile</a></li>
+                    <li><a href="#" class="nav-link" data-page="cart">Cart (<span id="cart-count">0</span>)</a></li>
+                    <li><a href="#" class="nav-link" data-page="favorites">Favorites</a></li>
+                    <li><a href="#" class="nav-link" data-page="order-history">Orders</a></li>
+                    <li><a href="#" class="nav-link" data-page="admin">Admin</a></li>
+                    <li><a href="#" class="nav-link" data-page="contact">Contact Us</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <button class="theme-toggle" id="theme-toggle">Night Mode</button>
+                <button id="logout-btn" style="display: none;">Logout</button>
+                <button id="login-btn">Login</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- Home Page -->
+            <div id="home-page" class="page active">
+                <section class="hero">
+                    <h1>Welcome to BookShelf</h1>
+                    <p>Discover your next favorite book from our extensive collection of titles across all genres.</p>
+                    <div class="search-bar">
+                        <input type="text" id="search-input" placeholder="Search for books...">
+                        <button id="search-button">Search</button>
+                    </div>
+                </section>
+
+                <h2>Featured Books</h2>
+                <div class="book-grid" id="featured-books">
+                    <!-- Books will be added dynamically -->
+                </div>
+            </div>
+
+            <!-- Login Page -->
+            <div id="login-page" class="page">
+                <form class="login-form" id="login-form">
+                    <h2>Login to Your Account</h2>
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="login-button">Login</button>
+                    <div class="register-link">
+                        <p>Don't have an account? <a href="#" id="show-register">Register here</a></p>
+                    </div>
+                </form>
+
+                <form class="login-form" id="register-form" style="display: none;">
+                    <h2>Create an Account</h2>
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <input type="text" id="register-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+                    <button type="submit" class="login-button">Register</button>
+                    <div class="register-link">
+                        <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profile-page" class="page">
+                <form class="profile-form" id="profile-form">
+                    <h2>Your Profile</h2>
+                    <div class="profile-info">
+                        <p><strong>Name:</strong> <span id="profile-name"></span></p>
+                        <p><strong>Email:</strong> <span id="profile-email"></span></p>
+                        <p><strong>Member since:</strong> <span id="profile-join-date"></span></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-address">Address</label>
+                        <input type="text" id="profile-address">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-phone">Phone Number</label>
+                        <input type="tel" id="profile-phone">
+                    </div>
+                    <button type="submit" class="login-button">Update Profile</button>
+                </form>
+            </div>
+
+            <!-- Cart Page -->
+            <div id="cart-page" class="page">
+                <h2>Your Shopping Cart</h2>
+                <div class="cart-items" id="cart-items">
+                    <!-- Cart items will be added dynamically -->
+                    <p class="empty-cart-message">Your cart is empty</p>
+                </div>
+                <div class="cart-summary" id="cart-summary" style="display: none;">
+                    <div class="cart-total">
+                        <span>Total:</span>
+                        <span id="cart-total">₹0.00</span>
+                    </div>
+                    <button class="checkout-button" id="checkout-button">Proceed to Checkout</button>
+                </div>
+            </div>
+
+            <!-- Payment Modal -->
+            <div class="modal" id="payment-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Payment</h2>
+                        <button class="close-modal" id="close-payment-modal">&times;</button>
+                    </div>
+                    <form id="payment-form">
+                        <div class="payment-methods">
+                            <h3>Select Payment Method</h3>
+                            <label class="payment-method">
+                                <input type="radio" name="payment-method" value="credit-card" checked>
+                                Credit/Debit Card
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="payment-method" value="upi">
+                                UPI
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="payment-method" value="net-banking">
+                                Net Banking
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="payment-method" value="cod">
+                                Cash on Delivery
+                            </label>
+                        </div>
+                        <div class="payment-details" id="credit-card-details">
+                            <h3>Card Details</h3>
+                            <input type="text" placeholder="Card Number" required>
+                            <input type="text" placeholder="Cardholder Name" required>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" placeholder="MM/YY" style="flex: 1;" required>
+                                <input type="text" placeholder="CVV" style="flex: 1;" required>
+                            </div>
+                        </div>
+                        <div class="payment-details" id="upi-details" style="display: none;">
+                            <h3>UPI Details</h3>
+                            <input type="text" placeholder="UPI ID" required>
+                        </div>
+                        <div class="payment-details" id="net-banking-details" style="display: none;">
+                            <h3>Net Banking</h3>
+                            <select style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                                <option value="">Select Bank</option>
+                                <option value="sbi">State Bank of India</option>
+                                <option value="hdfc">HDFC Bank</option>
+                                <option value="icici">ICICI Bank</option>
+                                <option value="axis">Axis Bank</option>
+                            </select>
+                        </div>
+                        <div class="payment-details" id="cod-details" style="display: none;">
+                            <p>Pay cash when your order is delivered.</p>
+                        </div>
+                        <button type="submit" class="confirm-payment">Confirm Payment</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Order Confirmation Page -->
+            <div id="order-confirmation-page" class="page">
+                <div class="order-confirmation">
+                    <h2>Order Confirmed!</h2>
+                    <p>Thank you for your purchase. Your order has been placed successfully.</p>
+                    <div class="order-details">
+                        <h3>Order Details</h3>
+                        <div id="confirmation-items">
+                            <!-- Order items will be added dynamically -->
+                        </div>
+                        <div class="order-total">
+                            <span>Total:</span>
+                            <span id="confirmation-total">₹0.00</span>
+                        </div>
+                    </div>
+                    <p>An email confirmation has been sent to your registered email address.</p>
+                    <button class="tracking-button" id="view-tracking-button">Track Your Order</button>
+                    <button class="tracking-button" id="continue-shopping-button" style="background-color: #e74c3c; margin-left: 10px;">Continue Shopping</button>
+                </div>
+            </div>
+
+            <!-- Order Tracking Page -->
+            <div id="order-tracking-page" class="page">
+                <div class="order-tracking">
+                    <h2>Order Tracking</h2>
+                    <p>Track the status of your order #<span id="tracking-order-id">12345</span></p>
+                    
+                    <div class="tracking-steps">
+                        <div class="tracking-step">
+                            <div class="step-number active">1</div>
+                            <div class="step-label active">Order Placed</div>
+                        </div>
+                        <div class="tracking-step">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Processing</div>
+                        </div>
+                        <div class="tracking-step">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Shipped</div>
+                        </div>
+                        <div class="tracking-step">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Delivered</div>
+                        </div>
+                    </div>
+                    
+                    <div class="tracking-details">
+                        <h3>Order Details</h3>
+                        <p><strong>Order Date:</strong> <span id="tracking-order-date">May 15, 2023</span></p>
+                        <p><strong>Estimated Delivery:</strong> <span id="tracking-delivery-date">May 20, 2023</span></p>
+                        <p><strong>Shipping Address:</strong> <span id="tracking-address">Shanti Shraddha Apartment, Somwar Peth, Pune</span></p>
+                    </div>
+                    
+                    <button class="tracking-button" id="back-to-orders-button">Back to Orders</button>
+                </div>
+            </div>
+
+            <!-- Order History Page -->
+            <div id="order-history-page" class="page">
+                <h2>Your Orders</h2>
+                <div class="order-history" id="order-history">
+                    <!-- Order cards will be added dynamically -->
+                    <p class="empty-orders-message">You haven't placed any orders yet</p>
+                </div>
+            </div>
+
+            <!-- Admin Page -->
+            <div id="admin-page" class="page">
+                <div class="container">
+                    <h2>Admin Panel - Add New Book</h2>
+                    <form class="add-book-form" id="add-book-form">
+                        <div class="form-group">
+                            <label for="book-title">Book Title</label>
+                            <input type="text" id="book-title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-author">Author</label>
+                            <input type="text" id="book-author" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-price">Price (₹)</label>
+                            <input type="number" id="book-price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-genre">Genre</label>
+                            <input type="text" id="book-genre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-image">Image URL</label>
+                            <input type="url" id="book-image" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-rating">Rating</label>
+                            <input type="number" id="book-rating" min="0" max="5" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-reviews">Reviews Count</label>
+                            <input type="number" id="book-reviews" required>
+                        </div>
+                        <button type="submit" class="login-button">Add Book to Database</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Review Modal -->
+            <div class="review-modal" id="review-modal">
+                <div class="review-content">
+                    <div class="review-header">
+                        <h2>Leave a Review</h2>
+                        <p>How would you rate "<span id="review-book-title">Book Title</span>"?</p>
+                    </div>
+                    <div class="review-stars">
+                        <span class="review-star" data-rating="1">★</span>
+                        <span class="review-star" data-rating="2">★</span>
+                        <span class="review-star" data-rating="3">★</span>
+                        <span class="review-star" data-rating="4">★</span>
+                        <span class="review-star" data-rating="5">★</span>
+                    </div>
+                    <textarea class="review-text" placeholder="Share your thoughts about this book..."></textarea>
+                    <button class="submit-review" id="submit-review">Submit Review</button>
+                </div>
+            </div>
+
+            <!-- Favorites Page -->
+            <div id="favorites-page" class="page">
+                <h2>Your Favorites</h2>
+                <div class="favorites-grid" id="favorites-grid">
+                    <!-- Favorite books will be added dynamically -->
+                    <p class="empty-favorites-message">You don't have any favorite books yet</p>
+                </div>
+            </div>
+
+            <!-- Contact Page -->
+            <div id="contact-page" class="page">
+                <form class="contact-form" id="contact-form">
+                    <h2>Contact Us</h2>
+                    <div class="form-group">
+                        <label for="contact-name">Your Name</label>
+                        <input type="text" id="contact-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email">Your Email</label>
+                        <input type="email" id="contact-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-subject">Subject</label>
+                        <input type="text" id="contact-subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-message">Message</label>
+                        <textarea id="contact-message" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chatbot -->
+    <div class="chatbot-container">
+        <div class="chatbot-window" id="chatbot-window">
+            <div class="chatbot-header">
+                <div class="chatbot-title">BookShelf Assistant</div>
+                <button class="chatbot-close" id="chatbot-close">&times;</button>
+            </div>
+            <div class="chatbot-messages" id="chatbot-messages">
+                <div class="chatbot-message bot-message">
+                    Hello! I'm your BookShelf assistant. How can I help you today?
+                </div>
+            </div>
+            <div class="chatbot-input-container">
+                <input type="text" class="chatbot-input" id="chatbot-input" placeholder="Type your message...">
+                <button class="chatbot-send" id="chatbot-send">➤</button>
+            </div>
+        </div>
+        <button class="chatbot-toggle" id="chatbot-toggle">💬</button>
+    </div>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h3>About BookShelf</h3>
+                <p>Your premier destination for books of all genres. We're passionate about connecting readers with their next great read.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <a href="#" class="nav-link" data-page="home">Home</a>
+                <a href="#" class="nav-link" data-page="profile">Profile</a>
+                <a href="#" class="nav-link" data-page="cart">Cart</a>
+                <a href="#" class="nav-link" data-page="favorites">Favorites</a>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Info</h3>
+                <p>Shanti Shraddha Apartment, Somwar Peth, Pune</p>
+                <p>Email: info@bookshelf.com</p>
+                <p>Phone: 9689861125</p>
+                <p>Developed by Akash Shingare</p>
+                <p>Instagram: Akkki_217</p>
+            </div>
+        </div>
+        <div class="container copyright">
+            <p>&copy; 2023 BookShelf. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>

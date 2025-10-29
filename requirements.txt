@@ -1,0 +1,6 @@
+# Backend/requirements.txt
+
+Flask~=2.3.3
+flask-CORS~=4.0.0
+pymongo
+python-dotenv
