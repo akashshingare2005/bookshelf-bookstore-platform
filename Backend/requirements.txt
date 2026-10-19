@@ -1,0 +1,13 @@
+# Backend/requirements.txt
+
+# Flask~=2.3.3
+# flask-CORS~=4.0.0
+# pymongo
+# python-dotenv
+
+Flask==2.3.3
+Flask-CORS==4.0.0
+pymongo
+python-dotenv
+scikit-learn
+gunicorn
