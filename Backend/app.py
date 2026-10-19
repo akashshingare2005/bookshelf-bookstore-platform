@@ -1,1252 +1,372 @@
-# # Backend/app.py
-
-# from flask import Flask, jsonify
-# from flask_cors import CORS
-# from pymongo import MongoClient
-# from dotenv import load_dotenv
-# import os
-# from bson.objectid import ObjectId # Needed to convert MongoDB's unique ID
-
-# # --- Configuration ---
-# load_dotenv()
-# app = Flask(__name__)
-# # Allow your frontend (on a different address) to access this server
-# CORS(app) 
-
-# # --- MongoDB Connection Setup ---
-# try:
-#     MONGO_URI = os.getenv("MONGO_URI")
-#     client = MongoClient(MONGO_URI)
-#     db = client.BookShelfDB 
-#     books_collection = db.books 
-#     print("Python Backend: Successfully connected to MongoDB!")
-
-# except Exception as e:
-#     print(f"Python Backend: Failed to connect to MongoDB. Error: {e}")
-#     books_collection = None
-
-
-# # --- API Endpoint: Get All Books ---
-# @app.route('/api/books', methods=['GET'])
-# def get_all_books():
-#     if books_collection is None:
-#         return jsonify({"message": "Database connection error"}), 500
-    
-#     try:
-#         books_cursor = books_collection.find()
-#         books_list = []
-#         for book in books_cursor:
-#             # Convert MongoDB's unique '_id' (ObjectId) to a string so it can be sent as JSON
-#             book['id'] = str(book.pop('_id'))
-            
-#             # Use 'id' as the key your frontend expects (not '_id')
-#             books_list.append(book)
-            
-#         return jsonify(books_list), 200
-        
-#     except Exception as e:
-#         return jsonify({"message": f"Error fetching books: {e}"}), 500
-
-
-# # --- Run the Server ---
-# if __name__ == '__main__':
-#     # Flask defaults to port 5000
-#     app.run(debug=True)
-
-
-
-
-
-
-
-# from flask import Flask, jsonify, request
-# from flask_cors import CORS
-# from pymongo import MongoClient
-# from dotenv import load_dotenv
-# import os
-# from bson.objectid import ObjectId
-# import json
-# from datetime import datetime
-
-# # --- Configuration ---
-# load_dotenv()
-# app = Flask(__name__)
-# CORS(app) 
-
-# # --- MongoDB Connection Setup ---
-# try:
-#     MONGO_URI = os.getenv("MONGO_URI")
-#     client = MongoClient(MONGO_URI)
-#     db = client.BookShelfDB 
-#     books_collection = db.books 
-#     print("Python Backend: Successfully connected to MongoDB!")
-
-# except Exception as e:
-#     print(f"Python Backend: Failed to connect to MongoDB. Error: {e}")
-#     books_collection = None
-
-# # Helper function to convert ObjectId to string
-# def serialize_doc(doc):
-#     if doc and '_id' in doc:
-#         doc['id'] = str(doc['_id'])
-#         del doc['_id']
-#     return doc
-
-# # --- API Endpoint: Get All Books ---
-# @app.route('/api/books', methods=['GET'])
-# def get_all_books():
-#     if books_collection is None:
-#         return jsonify({"message": "Database connection error"}), 500
-    
-#     try:
-#         books_cursor = books_collection.find()
-#         books_list = [serialize_doc(book) for book in books_cursor]
-#         return jsonify(books_list), 200
-        
-#     except Exception as e:
-#         return jsonify({"message": f"Error fetching books: {e}"}), 500
-
-# # --- API Endpoint: Add New Book ---
-# @app.route('/api/books', methods=['POST'])
-# def add_book():
-#     if books_collection is None:
-#         return jsonify({"message": "Database connection error"}), 500
-    
-#     try:
-#         new_book = request.json
-        
-#         # Required fields validation
-#         required_fields = ['title', 'author', 'price', 'genre', 'image', 'rating', 'reviews']
-#         for field in required_fields:
-#             if field not in new_book:
-#                 return jsonify({"message": f"Missing required field: {field}"}), 400
-        
-#         # Add timestamp
-#         new_book['created_at'] = datetime.utcnow()
-        
-#         # Insert into MongoDB
-#         result = books_collection.insert_one(new_book)
-        
-#         return jsonify({
-#             "message": "Book added successfully", 
-#             "id": str(result.inserted_id)
-#         }), 201
-        
-#     except Exception as e:
-#         return jsonify({"message": f"Error adding book: {e}"}), 500
-
-# # --- API Endpoint: Get Single Book ---
-# @app.route('/api/books/<book_id>', methods=['GET'])
-# def get_book(book_id):
-#     if books_collection is None:
-#         return jsonify({"message": "Database connection error"}), 500
-    
-#     try:
-#         book = books_collection.find_one({"_id": ObjectId(book_id)})
-#         if book:
-#             return jsonify(serialize_doc(book)), 200
-#         else:
-#             return jsonify({"message": "Book not found"}), 404
-            
-#     except Exception as e:
-#         return jsonify({"message": f"Error fetching book: {e}"}), 500
-
-# # --- API Endpoint: Update Book ---
-# @app.route('/api/books/<book_id>', methods=['PUT'])
-# def update_book(book_id):
-#     if books_collection is None:
-#         return jsonify({"message": "Database connection error"}), 500
-    
-#     try:
-#         updated_data = request.json
-#         result = books_collection.update_one(
-#             {"_id": ObjectId(book_id)},
-#             {"$set": updated_data}
-#         )
-        
-#         if result.matched_count:
-#             return jsonify({"message": "Book updated successfully"}), 200
-#         else:
-#             return jsonify({"message": "Book not found"}), 404
-            
-#     except Exception as e:
-#         return jsonify({"message": f"Error updating book: {e}"}), 500
-
-# # --- API Endpoint: Delete Book ---
-# @app.route('/api/books/<book_id>', methods=['DELETE'])
-# def delete_book(book_id):
-#     if books_collection is None:
-#         return jsonify({"message": "Database connection error"}), 500
-    
-#     try:
-#         result = books_collection.delete_one({"_id": ObjectId(book_id)})
-        
-#         if result.deleted_count:
-#             return jsonify({"message": "Book deleted successfully"}), 200
-#         else:
-#             return jsonify({"message": "Book not found"}), 404
-            
-#     except Exception as e:
-#         return jsonify({"message": f"Error deleting book: {e}"}), 500
-
-# # --- Health Check ---
-# @app.route('/api/health', methods=['GET'])
-# def health_check():
-#     return jsonify({
-#         "status": "healthy",
-#         "database": "connected" if books_collection else "disconnected",
-#         "timestamp": datetime.utcnow().isoformat()
-#     }), 200
-
-# # --- Run the Server ---
-# if __name__ == '__main__':
-#     app.run(debug=True, port=5000)
-
-
-
-
-
-# // App state
-# let currentUser = null;
-# let books = [];
-# let cart = [];
-# let favorites = [];
-# let filteredBooks = [];
-# let orders = [];
-# let currentOrderId = 1000;
-# let currentReviewBookId = null;
-
-# // DOM elements
-# const pages = document.querySelectorAll('.page');
-# const navLinks = document.querySelectorAll('.nav-link');
-# const loginBtn = document.getElementById('login-btn');
-# const logoutBtn = document.getElementById('logout-btn');
-# const themeToggle = document.getElementById('theme-toggle');
-# const cartCount = document.getElementById('cart-count');
-# const featuredBooksContainer = document.getElementById('featured-books');
-# const cartItemsContainer = document.getElementById('cart-items');
-# const cartSummary = document.getElementById('cart-summary');
-# const cartTotal = document.getElementById('cart-total');
-# const favoritesGrid = document.getElementById('favorites-grid');
-# const loginForm = document.getElementById('login-form');
-# const registerForm = document.getElementById('register-form');
-# const showRegister = document.getElementById('show-register');
-# const showLogin = document.getElementById('show-login');
-# const profileForm = document.getElementById('profile-form');
-# const profileName = document.getElementById('profile-name');
-# const profileEmail = document.getElementById('profile-email');
-# const profileJoinDate = document.getElementById('profile-join-date');
-# const contactForm = document.getElementById('contact-form');
-# const searchInput = document.getElementById('search-input');
-# const searchButton = document.getElementById('search-button');
-# const checkoutButton = document.getElementById('checkout-button');
-# const paymentModal = document.getElementById('payment-modal');
-# const closePaymentModal = document.getElementById('close-payment-modal');
-# const paymentForm = document.getElementById('payment-form');
-# const orderConfirmationPage = document.getElementById('order-confirmation-page');
-# const confirmationItems = document.getElementById('confirmation-items');
-# const confirmationTotal = document.getElementById('confirmation-total');
-# const viewTrackingButton = document.getElementById('view-tracking-button');
-# const continueShoppingButton = document.getElementById('continue-shopping-button');
-# const orderTrackingPage = document.getElementById('order-tracking-page');
-# const backToOrdersButton = document.getElementById('back-to-orders-button');
-# const orderHistoryPage = document.getElementById('order-history-page');
-# const orderHistoryContainer = document.getElementById('order-history');
-# const reviewModal = document.getElementById('review-modal');
-# const reviewBookTitle = document.getElementById('review-book-title');
-# const reviewStars = document.querySelectorAll('.review-star');
-# const submitReviewButton = document.getElementById('submit-review');
-# const addBookForm = document.getElementById('add-book-form');
-
-# // Chatbot elements
-# const chatbotToggle = document.getElementById('chatbot-toggle');
-# const chatbotWindow = document.getElementById('chatbot-window');
-# const chatbotClose = document.getElementById('chatbot-close');
-# const chatbotMessages = document.getElementById('chatbot-messages');
-# const chatbotInput = document.getElementById('chatbot-input');
-# const chatbotSend = document.getElementById('chatbot-send');
-
-# // Initialize the app
-# function init() {
-#     console.log("🚀 Initializing BookShelf...");
-#     setupEventListeners();
-#     checkAuthState();
-#     checkTheme();
-#     fetchBooks(); // Load books on startup
-# }
-
-# // Check and apply saved theme
-# function checkTheme() {
-#     const savedTheme = localStorage.getItem('theme');
-#     if (savedTheme === 'night') {
-#         document.body.classList.add('night-mode');
-#         themeToggle.textContent = 'Day Mode';
-#     }
-# }
-
-# // Toggle night mode
-# function toggleNightMode() {
-#     document.body.classList.toggle('night-mode');
-#     if (document.body.classList.contains('night-mode')) {
-#         themeToggle.textContent = 'Day Mode';
-#         localStorage.setItem('theme', 'night');
-#     } else {
-#         themeToggle.textContent = 'Night Mode';
-#         localStorage.setItem('theme', 'day');
-#     }
-# }
-
-# // Fetch books from backend
-# async function fetchBooks() {
-#     try {
-#         console.log("📚 Fetching books from backend...");
-#         featuredBooksContainer.innerHTML = '<div class="loading">Loading books...</div>';
-        
-#         const response = await fetch('http://127.0.0.1:5000/api/books');
-        
-#         if (!response.ok) {
-#             throw new Error(`HTTP error! status: ${response.status}`);
-#         }
-        
-#         const serverBooks = await response.json();
-#         console.log("✅ Books loaded:", serverBooks);
-        
-#         books = serverBooks.map(book => ({
-#             ...book,
-#             id: String(book.id)
-#         }));
-        
-#         filteredBooks = [...books];
-#         renderBooks();
-        
-#     } catch (error) {
-#         console.error("❌ Error loading books:", error);
-#         featuredBooksContainer.innerHTML = `
-#             <div class="error-message">
-#                 <h3>⚠️ Connection Error</h3>
-#                 <p>Could not load books from server.</p>
-#                 <p><small>Make sure Python backend is running on http://127.0.0.1:5000</small></p>
-#                 <button onclick="fetchBooks()" class="retry-button">Try Again</button>
-#             </div>
-#         `;
-#     }
-# }
-
-# // Render books on the home page
-# function renderBooks() {
-#     console.log("🎨 Rendering books...");
-#     featuredBooksContainer.innerHTML = '';
-    
-#     if (filteredBooks.length === 0) {
-#         featuredBooksContainer.innerHTML = '<p class="no-books">No books found matching your search.</p>';
-#         return;
-#     }
-    
-#     filteredBooks.forEach(book => {
-#         const isFavorite = favorites.some(fav => fav.id === book.id);
-        
-#         const bookCard = document.createElement('div');
-#         bookCard.className = 'book-card';
-#         bookCard.innerHTML = `
-#             <div class="book-cover" style="background-image: url('${book.image}')">
-#                 ${!book.image ? '📚' : ''}
-#             </div>
-#             <div class="book-details">
-#                 <h3>${book.title}</h3>
-#                 <p class="author">by ${book.author}</p>
-#                 <p class="genre">${book.genre}</p>
-#                 <div class="rating">
-#                     ${renderStars(book.rating)}
-#                     <span class="review-count">(${book.reviews})</span>
-#                 </div>
-#                 <div class="book-price">₹${book.price.toFixed(2)}</div>
-#                 <div class="book-actions">
-#                     <button class="add-to-cart" data-id="${book.id}">Add to Cart</button>
-#                     <button class="add-to-favorites" data-id="${book.id}" 
-#                             style="background-color: ${isFavorite ? '#e67e22' : '#f1c40f'}">
-#                         ${isFavorite ? '❤️' : '🤍'}
-#                     </button>
-#                 </div>
-#             </div>
-#         `;
-        
-#         featuredBooksContainer.appendChild(bookCard);
-#     });
-# }
-
-# // Render star ratings
-# function renderStars(rating) {
-#     let stars = '';
-#     const fullStars = Math.floor(rating);
-    
-#     for (let i = 1; i <= 5; i++) {
-#         if (i <= fullStars) {
-#             stars += '★';
-#         } else {
-#             stars += '☆';
-#         }
-#     }
-    
-#     return stars;
-# }
-
-# // Search books
-# function searchBooks(query) {
-#     if (!query.trim()) {
-#         filteredBooks = [...books];
-#     } else {
-#         const lowerQuery = query.toLowerCase();
-#         filteredBooks = books.filter(book => 
-#             book.title.toLowerCase().includes(lowerQuery) ||
-#             book.author.toLowerCase().includes(lowerQuery) ||
-#             book.genre.toLowerCase().includes(lowerQuery)
-#         );
-#     }
-#     renderBooks();
-# }
-
-# // Render cart items
-# function renderCart() {
-#     cartItemsContainer.innerHTML = '';
-    
-#     if (cart.length === 0) {
-#         cartItemsContainer.innerHTML = '<p class="empty-cart-message">Your cart is empty</p>';
-#         cartSummary.style.display = 'none';
-#         return;
-#     }
-    
-#     cartSummary.style.display = 'block';
-    
-#     let total = 0;
-    
-#     cart.forEach(item => {
-#         const book = books.find(b => b.id === item.id);
-#         if (book) {
-#             total += book.price * item.quantity;
-            
-#             const cartItem = document.createElement('div');
-#             cartItem.className = 'cart-item';
-#             cartItem.innerHTML = `
-#                 <div class="cart-item-cover" style="background-image: url('${book.image}')">
-#                     ${!book.image ? '📚' : ''}
-#                 </div>
-#                 <div class="cart-item-details">
-#                     <div class="cart-item-title">${book.title}</div>
-#                     <div class="cart-item-price">₹${(book.price * item.quantity).toFixed(2)}</div>
-#                 </div>
-#                 <div class="cart-item-actions">
-#                     <button class="decrease-quantity" data-id="${book.id}">-</button>
-#                     <div class="cart-item-quantity">${item.quantity}</div>
-#                     <button class="increase-quantity" data-id="${book.id}">+</button>
-#                     <button class="remove-from-cart" data-id="${book.id}">×</button>
-#                 </div>
-#             `;
-            
-#             cartItemsContainer.appendChild(cartItem);
-#         }
-#     });
-    
-#     cartTotal.textContent = `₹${total.toFixed(2)}`;
-#     cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
-# }
-
-# // Setup event listeners
-# function setupEventListeners() {
-#     console.log("🔧 Setting up event listeners...");
-    
-#     // Navigation
-#     navLinks.forEach(link => {
-#         link.addEventListener('click', (e) => {
-#             e.preventDefault();
-#             const pageId = link.getAttribute('data-page');
-#             showPage(pageId);
-#         });
-#     });
-    
-#     // Theme toggle
-#     themeToggle.addEventListener('click', toggleNightMode);
-    
-#     // Auth buttons
-#     loginBtn.addEventListener('click', () => showPage('login'));
-#     logoutBtn.addEventListener('click', logout);
-    
-#     // Search functionality
-#     searchButton.addEventListener('click', (e) => {
-#         e.preventDefault();
-#         searchBooks(searchInput.value);
-#     });
-    
-#     searchInput.addEventListener('keyup', (e) => {
-#         if (e.key === 'Enter') {
-#             searchBooks(searchInput.value);
-#         }
-#     });
-    
-#     // Login/register forms
-#     loginForm.addEventListener('submit', (e) => {
-#         e.preventDefault();
-#         const email = document.getElementById('login-email').value;
-#         const password = document.getElementById('login-password').value;
-#         login(email, password);
-#     });
-    
-#     registerForm.addEventListener('submit', (e) => {
-#         e.preventDefault();
-#         const name = document.getElementById('register-name').value;
-#         const email = document.getElementById('register-email').value;
-#         const password = document.getElementById('register-password').value;
-#         register(name, email, password);
-#     });
-    
-#     showRegister.addEventListener('click', (e) => {
-#         e.preventDefault();
-#         loginForm.style.display = 'none';
-#         registerForm.style.display = 'block';
-#     });
-    
-#     showLogin.addEventListener('click', (e) => {
-#         e.preventDefault();
-#         registerForm.style.display = 'none';
-#         loginForm.style.display = 'block';
-#     });
-    
-#     // Profile form
-#     profileForm.addEventListener('submit', (e) => {
-#         e.preventDefault();
-#         const address = document.getElementById('profile-address').value;
-#         const phone = document.getElementById('profile-phone').value;
-#         updateProfile(address, phone);
-#     });
-    
-#     // Add book form
-#     addBookForm.addEventListener('submit', (e) => {
-#         e.preventDefault();
-#         addNewBook();
-#     });
-    
-#     // Checkout button
-#     checkoutButton.addEventListener('click', (e) => {
-#         e.preventDefault();
-#         if (cart.length === 0) {
-#             alert('Your cart is empty!');
-#             return;
-#         }
-#         paymentModal.classList.add('active');
-#     });
-    
-#     // Payment modal
-#     closePaymentModal.addEventListener('click', () => {
-#         paymentModal.classList.remove('active');
-#     });
-    
-#     paymentForm.addEventListener('submit', (e) => {
-#         e.preventDefault();
-#         placeOrder();
-#         paymentModal.classList.remove('active');
-#     });
-    
-#     // Payment method toggle
-#     document.querySelectorAll('input[name="payment-method"]').forEach(method => {
-#         method.addEventListener('change', (e) => {
-#             document.querySelectorAll('.payment-details').forEach(detail => {
-#                 detail.style.display = 'none';
-#             });
-#             document.getElementById(e.target.value + '-details').style.display = 'block';
-#         });
-#     });
-    
-#     // Order confirmation buttons
-#     viewTrackingButton.addEventListener('click', () => {
-#         showPage('order-tracking');
-#     });
-    
-#     continueShoppingButton.addEventListener('click', () => {
-#         showPage('home');
-#     });
-    
-#     // Order tracking button
-#     backToOrdersButton.addEventListener('click', () => {
-#         showPage('order-history');
-#     });
-    
-#     // Review stars
-#     reviewStars.forEach(star => {
-#         star.addEventListener('click', (e) => {
-#             const rating = parseInt(e.target.getAttribute('data-rating'));
-#             setReviewRating(rating);
-#         });
-#     });
-    
-#     submitReviewButton.addEventListener('click', submitReview);
-    
-#     // Chatbot events
-#     chatbotToggle.addEventListener('click', () => {
-#         chatbotWindow.classList.toggle('active');
-#     });
-    
-#     chatbotClose.addEventListener('click', () => {
-#         chatbotWindow.classList.remove('active');
-#     });
-    
-#     chatbotSend.addEventListener('click', sendChatbotMessage);
-    
-#     chatbotInput.addEventListener('keypress', (e) => {
-#         if (e.key === 'Enter') {
-#             sendChatbotMessage();
-#         }
-#     });
-    
-#     // Book actions (delegated events)
-#     document.addEventListener('click', (e) => {
-#         const target = e.target;
-        
-#         // Add to cart
-#         if (target.classList.contains('add-to-cart')) {
-#             const bookId = target.getAttribute('data-id');
-#             addToCart(bookId);
-#         }
-        
-#         // Add to favorites
-#         if (target.classList.contains('add-to-favorites')) {
-#             const bookId = target.getAttribute('data-id');
-#             toggleFavorite(bookId);
-#         }
-        
-#         // Cart quantity controls
-#         if (target.classList.contains('increase-quantity')) {
-#             const bookId = target.getAttribute('data-id');
-#             updateCartItem(bookId, 1);
-#         }
-        
-#         if (target.classList.contains('decrease-quantity')) {
-#             const bookId = target.getAttribute('data-id');
-#             updateCartItem(bookId, -1);
-#         }
-        
-#         if (target.classList.contains('remove-from-cart')) {
-#             const bookId = target.getAttribute('data-id');
-#             removeFromCart(bookId);
-#         }
-#     });
-    
-#     console.log("✅ Event listeners setup complete");
-# }
-
-# // Show specific page
-# function showPage(pageId) {
-#     console.log("📄 Showing page:", pageId);
-    
-#     // Check authentication for protected pages
-#     const protectedPages = ['profile', 'cart', 'favorites', 'order-history', 'admin'];
-#     if (protectedPages.includes(pageId) && !currentUser) {
-#         showPage('login');
-#         return;
-#     }
-    
-#     // Hide all pages
-#     pages.forEach(page => {
-#         page.classList.remove('active');
-#     });
-    
-#     // Show target page
-#     const targetPage = document.getElementById(`${pageId}-page`);
-#     if (targetPage) {
-#         targetPage.classList.add('active');
-#     }
-    
-#     // Update page-specific content
-#     switch(pageId) {
-#         case 'cart':
-#             renderCart();
-#             break;
-#         case 'favorites':
-#             renderFavorites();
-#             break;
-#         case 'profile':
-#             updateProfileDisplay();
-#             break;
-#         case 'order-history':
-#             renderOrderHistory();
-#             break;
-#         case 'home':
-#             searchInput.value = '';
-#             filteredBooks = [...books];
-#             renderBooks();
-#             break;
-#     }
-# }
-
-# // Auth functions
-# function login(email, password) {
-#     console.log("🔐 Logging in:", email);
-    
-#     // Simple validation
-#     if (!email || !password) {
-#         alert('Please enter both email and password');
-#         return;
-#     }
-    
-#     currentUser = {
-#         name: email.split('@')[0],
-#         email: email,
-#         joinDate: new Date().toLocaleDateString(),
-#         address: '',
-#         phone: ''
-#     };
-    
-#     // Load user data from localStorage
-#     const userData = localStorage.getItem(`user_${email}`);
-#     if (userData) {
-#         currentUser = { ...currentUser, ...JSON.parse(userData) };
-#     }
-    
-#     // Load user-specific data
-#     const savedCart = localStorage.getItem(`cart_${email}`);
-#     if (savedCart) cart = JSON.parse(savedCart);
-    
-#     const savedFavorites = localStorage.getItem(`favorites_${email}`);
-#     if (savedFavorites) favorites = JSON.parse(savedFavorites);
-    
-#     const savedOrders = localStorage.getItem(`orders_${email}`);
-#     if (savedOrders) orders = JSON.parse(savedOrders);
-    
-#     checkAuthState();
-#     showPage('home');
-#     alert(`Welcome back, ${currentUser.name}!`);
-# }
-
-# function register(name, email, password) {
-#     console.log("📝 Registering:", name, email);
-    
-#     if (!name || !email || !password) {
-#         alert('Please fill all fields');
-#         return;
-#     }
-    
-#     currentUser = {
-#         name: name,
-#         email: email,
-#         joinDate: new Date().toLocaleDateString(),
-#         address: '',
-#         phone: ''
-#     };
-    
-#     // Save to localStorage
-#     localStorage.setItem(`user_${email}`, JSON.stringify(currentUser));
-    
-#     // Initialize empty arrays for new user
-#     cart = [];
-#     favorites = [];
-#     orders = [];
-    
-#     checkAuthState();
-#     showPage('home');
-#     alert(`Account created successfully! Welcome, ${name}!`);
-# }
-
-# function logout() {
-#     console.log("🚪 Logging out");
-    
-#     // Save data before logout
-#     if (currentUser) {
-#         localStorage.setItem(`cart_${currentUser.email}`, JSON.stringify(cart));
-#         localStorage.setItem(`favorites_${currentUser.email}`, JSON.stringify(favorites));
-#         localStorage.setItem(`orders_${currentUser.email}`, JSON.stringify(orders));
-#     }
-    
-#     currentUser = null;
-#     cart = [];
-#     favorites = [];
-#     orders = [];
-    
-#     checkAuthState();
-#     showPage('home');
-# }
-
-# function checkAuthState() {
-#     if (currentUser) {
-#         loginBtn.style.display = 'none';
-#         logoutBtn.style.display = 'block';
-#     } else {
-#         loginBtn.style.display = 'block';
-#         logoutBtn.style.display = 'none';
-#     }
-# }
-
-# // Cart functions
-# function addToCart(bookId) {
-#     if (!currentUser) {
-#         showPage('login');
-#         return;
-#     }
-    
-#     const existingItem = cart.find(item => item.id === bookId);
-    
-#     if (existingItem) {
-#         existingItem.quantity += 1;
-#     } else {
-#         cart.push({ id: bookId, quantity: 1 });
-#     }
-    
-#     renderCart();
-#     alert('Book added to cart!');
-# }
-
-# function updateCartItem(bookId, change) {
-#     const item = cart.find(item => item.id === bookId);
-    
-#     if (item) {
-#         item.quantity += change;
-        
-#         if (item.quantity <= 0) {
-#             cart = cart.filter(item => item.id !== bookId);
-#         }
-#     }
-    
-#     renderCart();
-# }
-
-# function removeFromCart(bookId) {
-#     cart = cart.filter(item => item.id !== bookId);
-#     renderCart();
-# }
-
-# // Favorites functions
-# function toggleFavorite(bookId) {
-#     if (!currentUser) {
-#         showPage('login');
-#         return;
-#     }
-    
-#     const book = books.find(b => b.id === bookId);
-#     const existingIndex = favorites.findIndex(fav => fav.id === bookId);
-    
-#     if (existingIndex >= 0) {
-#         favorites.splice(existingIndex, 1);
-#         alert('Removed from favorites');
-#     } else {
-#         favorites.push(book);
-#         alert('Added to favorites!');
-#     }
-    
-#     renderBooks();
-# }
-
-# function renderFavorites() {
-#     favoritesGrid.innerHTML = '';
-    
-#     if (favorites.length === 0) {
-#         favoritesGrid.innerHTML = '<p class="empty-favorites-message">You don\'t have any favorite books yet</p>';
-#         return;
-#     }
-    
-#     favorites.forEach(book => {
-#         const favoriteCard = document.createElement('div');
-#         favoriteCard.className = 'book-card';
-#         favoriteCard.innerHTML = `
-#             <div class="book-cover" style="background-image: url('${book.image}')">
-#                 ${!book.image ? '📚' : ''}
-#             </div>
-#             <div class="book-details">
-#                 <h3>${book.title}</h3>
-#                 <p class="author">by ${book.author}</p>
-#                 <p class="genre">${book.genre}</p>
-#                 <div class="rating">
-#                     ${renderStars(book.rating)}
-#                     <span class="review-count">(${book.reviews})</span>
-#                 </div>
-#                 <div class="book-price">₹${book.price.toFixed(2)}</div>
-#                 <div class="book-actions">
-#                     <button class="add-to-cart" data-id="${book.id}">Add to Cart</button>
-#                     <button class="add-to-favorites" data-id="${book.id}" style="background-color: #e67e22">❤️</button>
-#                 </div>
-#             </div>
-#         `;
-        
-#         favoritesGrid.appendChild(favoriteCard);
-#     });
-# }
-
-# // Order functions
-# function placeOrder() {
-#     if (!currentUser || cart.length === 0) return;
-    
-#     const orderId = currentOrderId++;
-#     const orderDate = new Date().toLocaleDateString();
-#     let total = 0;
-    
-#     const orderItems = cart.map(item => {
-#         const book = books.find(b => b.id === item.id);
-#         total += book.price * item.quantity;
-#         return { id: item.id, quantity: item.quantity };
-#     });
-    
-#     const order = {
-#         id: orderId,
-#         date: orderDate,
-#         items: orderItems,
-#         total: total,
-#         status: 'processing'
-#     };
-    
-#     orders.unshift(order);
-    
-#     // Save orders
-#     localStorage.setItem(`orders_${currentUser.email}`, JSON.stringify(orders));
-    
-#     // Clear cart
-#     cart = [];
-#     renderCart();
-    
-#     // Show confirmation
-#     renderOrderConfirmation(order);
-#     showPage('order-confirmation');
-    
-#     alert('Order placed successfully!');
-# }
-
-# function renderOrderConfirmation(order) {
-#     confirmationItems.innerHTML = '';
-    
-#     order.items.forEach(item => {
-#         const book = books.find(b => b.id === item.id);
-#         confirmationItems.innerHTML += `
-#             <div class="order-item">
-#                 <span>${book.title} × ${item.quantity}</span>
-#                 <span>₹${(book.price * item.quantity).toFixed(2)}</span>
-#             </div>
-#         `;
-#     });
-    
-#     confirmationTotal.textContent = `₹${order.total.toFixed(2)}`;
-# }
-
-# function renderOrderHistory() {
-#     orderHistoryContainer.innerHTML = '';
-    
-#     if (orders.length === 0) {
-#         orderHistoryContainer.innerHTML = '<p class="empty-orders-message">You haven\'t placed any orders yet</p>';
-#         return;
-#     }
-    
-#     orders.forEach(order => {
-#         const orderCard = document.createElement('div');
-#         orderCard.className = 'order-card';
-#         orderCard.innerHTML = `
-#             <div class="order-header">
-#                 <div>
-#                     <span class="order-id">Order #${order.id}</span>
-#                     <span class="order-date">${order.date}</span>
-#                 </div>
-#                 <span class="order-status status-processing">Processing</span>
-#             </div>
-#             <div class="order-total">Total: ₹${order.total.toFixed(2)}</div>
-#         `;
-        
-#         orderHistoryContainer.appendChild(orderCard);
-#     });
-# }
-
-# // Add book to database
-# async function addNewBook() {
-#     const newBook = {
-#         title: document.getElementById('book-title').value,
-#         author: document.getElementById('book-author').value,
-#         price: parseFloat(document.getElementById('book-price').value),
-#         genre: document.getElementById('book-genre').value,
-#         image: document.getElementById('book-image').value,
-#         rating: parseFloat(document.getElementById('book-rating').value),
-#         reviews: parseInt(document.getElementById('book-reviews').value)
-#     };
-
-#     try {
-#         const response = await fetch('http://127.0.0.1:5000/api/books', {
-#             method: 'POST',
-#             headers: {
-#                 'Content-Type': 'application/json',
-#             },
-#             body: JSON.stringify(newBook)
-#         });
-
-#         if (response.ok) {
-#             alert('Book added successfully to database!');
-#             addBookForm.reset();
-#             await fetchBooks(); // Refresh the book list
-#         } else {
-#             alert('Error adding book');
-#         }
-#     } catch (error) {
-#         console.error('Error:', error);
-#         alert('Error adding book. Check console for details.');
-#     }
-# }
-
-# // Profile functions
-# function updateProfile(address, phone) {
-#     if (!currentUser) return;
-    
-#     currentUser.address = address;
-#     currentUser.phone = phone;
-    
-#     localStorage.setItem(`user_${currentUser.email}`, JSON.stringify(currentUser));
-#     alert('Profile updated successfully!');
-# }
-
-# function updateProfileDisplay() {
-#     if (!currentUser) return;
-    
-#     profileName.textContent = currentUser.name;
-#     profileEmail.textContent = currentUser.email;
-#     profileJoinDate.textContent = currentUser.joinDate;
-#     document.getElementById('profile-address').value = currentUser.address || '';
-#     document.getElementById('profile-phone').value = currentUser.phone || '';
-# }
-
-# // Review functions
-# function openReviewModal(bookId) {
-#     currentReviewBookId = bookId;
-#     const book = books.find(b => b.id === bookId);
-#     reviewBookTitle.textContent = book.title;
-#     reviewModal.classList.add('active');
-# }
-
-# function setReviewRating(rating) {
-#     reviewStars.forEach(star => {
-#         const starRating = parseInt(star.getAttribute('data-rating'));
-#         star.classList.toggle('selected', starRating <= rating);
-#     });
-# }
-
-# function submitReview() {
-#     const rating = document.querySelectorAll('.review-star.selected').length;
-#     const reviewText = document.querySelector('.review-text').value;
-    
-#     if (rating === 0) {
-#         alert('Please select a rating');
-#         return;
-#     }
-    
-#     alert(`Thank you for your ${rating}-star review!\n\n"${reviewText}"`);
-#     reviewModal.classList.remove('active');
-#     document.querySelector('.review-text').value = '';
-# }
-
-# // Chatbot functions
-# function sendChatbotMessage() {
-#     const message = chatbotInput.value.trim();
-#     if (!message) return;
-    
-#     addChatbotMessage(message, 'user');
-#     chatbotInput.value = '';
-    
-#     setTimeout(() => {
-#         const response = generateChatbotResponse(message);
-#         addChatbotMessage(response, 'bot');
-#     }, 500);
-# }
-
-# function addChatbotMessage(text, sender) {
-#     const messageDiv = document.createElement('div');
-#     messageDiv.className = `chatbot-message ${sender}-message`;
-#     messageDiv.textContent = text;
-#     chatbotMessages.appendChild(messageDiv);
-#     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-# }
-
-# function generateChatbotResponse(message) {
-#     const lowerMessage = message.toLowerCase();
-    
-#     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-#         return "Hello! How can I help you today?";
-#     } else if (lowerMessage.includes('order') || lowerMessage.includes('track')) {
-#         return "You can check your orders in the 'Orders' section of your account.";
-#     } else if (lowerMessage.includes('book') || lowerMessage.includes('recommend')) {
-#         return "We have a great collection of books! Browse our homepage to find your next favorite read.";
-#     } else if (lowerMessage.includes('contact')) {
-#         return "You can reach us through the Contact Us page or email support@bookshelf.com";
-#     } else {
-#         return "I'm here to help! You can ask me about books, orders, or general questions.";
-#     }
-# }
-
-# // Initialize the app when DOM is loaded
-# document.addEventListener('DOMContentLoaded', init);
-
-
-
-
-
-
-
-
-
-from flask import Flask, jsonify, request
+﻿from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-from pymongo import MongoClient
-from bson import ObjectId
 from datetime import datetime
+from urllib.parse import quote_plus, urlparse
 import os
+import re
 
-app = Flask(__name__)
+from dotenv import load_dotenv
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+load_dotenv()
+
+app = Flask(__name__, static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Frontend')), static_url_path='/')
 CORS(app)
 
-# MongoDB Connection
-try:
-    # REPLACE THIS WITH YOUR ACTUAL MONGODB URI
-    MONGO_URI="mongodb+srv://akkki_217:Akash217@cluster0.6rovofz.mongodb.net/BookShelfDB?retryWrites=true&w=majority&appName=Cluster0"
-    client = MongoClient(MONGO_URI)
-    db = client.BookShelfDB
-    books_collection = db.books
-    print("✅ MongoDB Connected Successfully!")
-except Exception as e:
-    print(f"❌ MongoDB Connection Failed: {e}")
-    books_collection = None
+mongo_client = None
+mongo_collection = None
+mongo_uri = os.getenv('MONGO_URI', '').strip().strip('"')
 
-def serialize_book(book):
-    """Convert MongoDB ObjectId to string"""
-    if book and '_id' in book:
-        book['id'] = str(book['_id'])
-        del book['_id']
-    return book
+if mongo_uri and '*' not in mongo_uri:
+    mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=1500)
+    mongo_collection = mongo_client[os.getenv('MONGO_DB_NAME', 'BookShelfDB')]['find_my_book_results']
+
+SELLER_SEARCHES = {
+    'new_books': [
+        ('Amazon India', '🛒', 'https://www.amazon.in/s?k={query}'),
+        ('Flipkart', '🛍️', 'https://www.flipkart.com/search?q={query}'),
+        ('Meesho', 'm', 'https://www.meesho.com/search?q={query}'),
+        ('Google Shopping', 'G', 'https://www.google.com/search?tbm=shop&q={query}')
+    ],
+    'second_hand_books': [
+        ('Bookchor', '📚', 'https://www.bookchor.com/search/?query={query}'),
+        ('Clankart', '🔎', 'https://www.clankart.com/search?q={query}'),
+        ('MyPustak', '♻️', 'https://www.mypustak.com/search?value={query}&sortBy=books_collection%2Fsort%2Fnum_is_out_of_stack%3Aasc%2CiDate%3Adesc&query={query}&page=1')
+    ]
+}
+
+
+SEARCH_STOP_WORDS = {
+    'a', 'an', 'and', 'book', 'books', 'copy', 'find', 'for', ' me',
+    'my', 'of', 'on', 'please', 'the', 'under', 'used', 'want', 'with'
+}
+
+
+def get_search_terms(query):
+    return [
+        term for term in re.findall(r'[a-z0-9]+', query.lower())
+        if len(term) > 1 and not term.isdigit() and term not in SEARCH_STOP_WORDS
+    ]
+
+
+def build_external_results(query):
+    encoded_query = quote_plus(query)
+    results = {}
+    for category, sellers in SELLER_SEARCHES.items():
+        results[category] = [
+            {
+                'title': query,
+                'seller': seller,
+                'icon': icon,
+                'price': None,
+                'rating': None,
+                'reviews': None,
+                'condition': 'New' if category == 'new_books' else 'Used condition varies',
+                'delivery_charges': None,
+                'url': template.format(query=encoded_query),
+                'data_source': 'External seller search link'
+            }
+            for seller, icon, template in sellers
+        ]
+    return results
+
+
+def build_recommendations(query, max_price):
+    catalog_documents = [
+        ' '.join(
+            str(book.get(field, ''))
+            for field in ('title', 'author', 'genre', 'description')
+        )
+        for book in books
+    ]
+    if not catalog_documents or not query.strip():
+        return []
+
+    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
+    catalog_matrix = vectorizer.fit_transform(catalog_documents)
+    query_vector = vectorizer.transform([query])
+    scores = cosine_similarity(query_vector, catalog_matrix).flatten()
+
+    recommendations = []
+    for index in scores.argsort()[::-1]:
+        book = books[index]
+        if scores[index] <= 0:
+            continue
+        if max_price is not None and book.get('price') is not None and float(book['price']) > max_price:
+            continue
+        recommendations.append({
+            **book,
+            'relevance': round(float(scores[index]), 4),
+            'seller': 'BookShelf Catalog',
+            'condition': 'New',
+            'delivery_charges': None,
+            'url': f"/?search={quote_plus(book['title'])}",
+            'data_source': 'BookShelf local catalog'
+        })
+    return recommendations[:12]
+
+
+def get_mongo_results(query, max_price):
+    if mongo_collection is None:
+        return [], None
+
+    try:
+        mongo_query = {
+            '$or': [
+                {'title': {'$regex': re.escape(query), '$options': 'i'}},
+                {'author': {'$regex': re.escape(query), '$options': 'i'}}
+            ]
+        }
+        if max_price is not None:
+            mongo_query['price'] = {'$lte': max_price}
+
+        records = []
+        for record in mongo_collection.find(mongo_query).limit(100):
+            record.pop('_id', None)
+            record_url = str(record.get('url', '')).strip()
+            parsed_url = urlparse(record_url)
+            if parsed_url.scheme not in ('http', 'https') or not parsed_url.netloc:
+                continue
+            record['data_source'] = 'BookShelf MongoDB Atlas'
+            records.append(record)
+        return records, None
+    except PyMongoError as error:
+        return [], f'MongoDB Atlas results could not be loaded: {error}'
+
+books = [
+    {
+        "id": "1",
+        "title": "The Great Gatsby",
+        "author": "F. Scott Fitzgerald",
+        "price": 499,
+        "genre": "Classic",
+        "image": "https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.5,
+        "reviews": 128
+    },
+    {
+        "id": "2",
+        "title": "To Kill a Mockingbird",
+        "author": "Harper Lee",
+        "price": 399,
+        "genre": "Classic",
+        "image": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.8,
+        "reviews": 215
+    },
+    {
+        "id": "3",
+        "title": "1984",
+        "author": "George Orwell",
+        "price": 349,
+        "genre": "Dystopian",
+        "image": "https://images.unsplash.com/photo-1531346878377-a5be20888e57?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.3,
+        "reviews": 178
+    },
+    {
+        "id": "4",
+        "title": "The Hobbit",
+        "author": "J.R.R. Tolkien",
+        "price": 599,
+        "genre": "Fantasy",
+        "image": "https://images.unsplash.com/photo-1589998059171-988d887df646?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.7,
+        "reviews": 192
+    },
+    {
+        "id": "5",
+        "title": "Pride and Prejudice",
+        "author": "Jane Austen",
+        "price": 299,
+        "genre": "Romance",
+        "image": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.6,
+        "reviews": 156
+    },
+    {
+        "id": "6",
+        "title": "The Catcher in the Rye",
+        "author": "J.D. Salinger",
+        "price": 449,
+        "genre": "Coming-of-age",
+        "image": "https://images.unsplash.com/photo-1592496431122-2349e0fbc666?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.0,
+        "reviews": 142
+    },
+    {
+        "id": "7",
+        "title": "Python Crash Course",
+        "author": "Eric Matthes",
+        "price": 699,
+        "genre": "Programming",
+        "image": "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.8,
+        "reviews": 342
+    },
+    {
+        "id": "8",
+        "title": "Automate the Boring Stuff with Python",
+        "author": "Al Sweigart",
+        "price": 799,
+        "genre": "Programming",
+        "image": "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.7,
+        "reviews": 286
+    },
+    {
+        "id": "9",
+        "title": "Fluent Python",
+        "author": "Luciano Ramalho",
+        "price": 899,
+        "genre": "Programming",
+        "image": "https://images.unsplash.com/photo-1555068792-3d7e7c4e2f4f?auto=format&fit=crop&w=800&q=80",
+        "rating": 4.6,
+        "reviews": 198
+    }
+]
+
+for book in books:
+    book.setdefault(
+        'description',
+        f"{book['title']} by {book['author']}, a {book['genre'].lower()} book."
+    )
 
 @app.route('/')
-def home():
-    return jsonify({"message": "BookShelf Backend is Running!"})
-
-@app.route('/api/books', methods=['GET'])
-def get_all_books():
-    if books_collection is None:
-        return jsonify({"error": "Database not connected"}), 500
-    
-    try:
-        books = list(books_collection.find())
-        books_list = [serialize_book(book) for book in books]
-        
-        # If no books in database, return sample books
-        if not books_list:
-            books_list = [
-                {
-                    "id": "1",
-                    "title": "The Great Gatsby",
-                    "author": "F. Scott Fitzgerald", 
-                    "price": 499,
-                    "genre": "Classic",
-                    "image": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-                    "rating": 4.5,
-                    "reviews": 128
-                },
-                {
-                    "id": "2",
-                    "title": "To Kill a Mockingbird",
-                    "author": "Harper Lee",
-                    "price": 399,
-                    "genre": "Classic", 
-                    "image": "https://images.unsplash.com/photo-1554757380-2fb69b9d5e63?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-                    "rating": 4.8,
-                    "reviews": 215
-                },
-                {
-                    "id": "3", 
-                    "title": "1984",
-                    "author": "George Orwell",
-                    "price": 349,
-                    "genre": "Dystopian",
-                    "image": "https://images.unsplash.com/photo-1531346878377-a5be20888e57?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-                    "rating": 4.3,
-                    "reviews": 178
-                }
-            ]
-        
-        return jsonify(books_list)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/books', methods=['POST'])
-def add_book():
-    if books_collection is None:
-        return jsonify({"error": "Database not connected"}), 500
-    
-    try:
-        new_book = request.get_json()
-        
-        # Validate required fields
-        required_fields = ['title', 'author', 'price', 'genre', 'image', 'rating', 'reviews']
-        for field in required_fields:
-            if field not in new_book:
-                return jsonify({"error": f"Missing field: {field}"}), 400
-        
-        # Insert book
-        result = books_collection.insert_one(new_book)
-        
-        return jsonify({
-            "message": "Book added successfully",
-            "id": str(result.inserted_id)
-        }), 201
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/books/<book_id>', methods=['GET'])
-def get_book(book_id):
-    if books_collection is None:
-        return jsonify({"error": "Database not connected"}), 500
-    
-    try:
-        book = books_collection.find_one({"_id": ObjectId(book_id)})
-        if book:
-            return jsonify(serialize_book(book))
-        else:
-            return jsonify({"error": "Book not found"}), 404
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/books/<book_id>', methods=['PUT'])
-def update_book(book_id):
-    if books_collection is None:
-        return jsonify({"error": "Database not connected"}), 500
-    
-    try:
-        updated_data = request.get_json()
-        result = books_collection.update_one(
-            {"_id": ObjectId(book_id)},
-            {"$set": updated_data}
-        )
-        
-        if result.matched_count:
-            return jsonify({"message": "Book updated successfully"})
-        else:
-            return jsonify({"error": "Book not found"}), 404
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/books/<book_id>', methods=['DELETE'])
-def delete_book(book_id):
-    if books_collection is None:
-        return jsonify({"error": "Database not connected"}), 500
-    
-    try:
-        result = books_collection.delete_one({"_id": ObjectId(book_id)})
-        
-        if result.deleted_count:
-            return jsonify({"message": "Book deleted successfully"})
-        else:
-            return jsonify({"error": "Book not found"}), 404
-            
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({
-        "status": "running",
-        "database": "connected" if books_collection else "disconnected",
-        "timestamp": datetime.now().isoformat()
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'book_count': len(books)
     })
 
+@app.route('/api/books', methods=['GET'])
+def get_all_books():
+    return jsonify(books)
+
+
+@app.route('/api/find-my-book', methods=['GET'])
+def find_my_book():
+    query = str(request.args.get('q', '')).strip()
+    if not query:
+        return jsonify({'message': 'Please enter a book title, author, ISBN, or natural-language request.'}), 400
+    if len(query) > 200:
+        return jsonify({'message': 'Search prompt must be 200 characters or fewer.'}), 400
+
+    max_price = request.args.get('max_price', '').strip()
+    parsed_max_price = None
+    if max_price:
+        try:
+            parsed_max_price = float(max_price)
+        except ValueError:
+            return jsonify({'message': 'Budget must be a valid number.'}), 400
+        if parsed_max_price < 0:
+            return jsonify({'message': 'Budget cannot be negative.'}), 400
+
+    results = build_external_results(query)
+    recommendations = build_recommendations(query, parsed_max_price)
+    mongo_results, mongo_warning = get_mongo_results(query, parsed_max_price)
+    for result in mongo_results:
+        category = 'second_hand_books' if str(result.get('condition', '')).lower() not in ('new', 'brand new') else 'new_books'
+        results[category].append(result)
+
+    response = {
+        'query': query,
+        'budget': parsed_max_price,
+        'notice': 'BookShelf recommendations are ranked with TF-IDF and cosine similarity. Marketplace cards preserve your exact prompt and open the seller search page. Marketplace prices, ratings, reviews, conditions, and delivery charges are shown only when supplied by an authorized data source.',
+        'recommendations': recommendations,
+        'results': results
+    }
+    if mongo_warning:
+        response['warning'] = mongo_warning
+    return jsonify(response)
+
+
+@app.route('/api/books', methods=['POST'])
+def add_book():
+    data = request.get_json(silent=True) or {}
+    required_fields = ['title', 'author', 'price', 'genre', 'image', 'rating', 'reviews']
+
+    for field in required_fields:
+        if field not in data or data[field] is None or (isinstance(data[field], str) and not data[field].strip()):
+            return jsonify({'message': f'Missing required field: {field}'}), 400
+
+    try:
+        price = float(data['price'])
+        rating = float(data['rating'])
+        reviews = int(data['reviews'])
+    except (TypeError, ValueError):
+        return jsonify({'message': 'Price, rating, and reviews must be valid numbers.'}), 400
+    if price < 0 or not 0 <= rating <= 5 or reviews < 0:
+        return jsonify({'message': 'Price and reviews cannot be negative, and rating must be between 0 and 5.'}), 400
+
+    numeric_ids = [int(book['id']) for book in books if str(book['id']).isdigit()]
+    new_book = {
+        'id': str(max(numeric_ids, default=0) + 1),
+        'title': str(data['title']).strip(),
+        'author': str(data['author']).strip(),
+        'price': price,
+        'genre': str(data['genre']).strip(),
+        'image': str(data['image']).strip(),
+        'rating': rating,
+        'reviews': reviews
+    }
+
+    books.insert(0, new_book)
+    return jsonify({'message': 'Book added successfully', 'book': new_book}), 201
+
+@app.route('/api/books/<book_id>', methods=['GET'])
+def get_book(book_id):
+    book = next((b for b in books if b['id'] == book_id), None)
+    if not book:
+        return jsonify({'message': 'Book not found'}), 404
+    return jsonify(book)
+
+@app.route('/api/books/<book_id>', methods=['PUT'])
+def update_book(book_id):
+    book = next((b for b in books if b['id'] == book_id), None)
+    if not book:
+        return jsonify({'message': 'Book not found'}), 404
+
+    data = request.get_json(silent=True) or {}
+    try:
+        for key, value in data.items():
+            if key in ('price', 'rating', 'reviews'):
+                if key == 'reviews':
+                    parsed_value = int(value)
+                    if parsed_value < 0:
+                        raise ValueError
+                else:
+                    parsed_value = float(value)
+                    if parsed_value < 0 or (key == 'rating' and parsed_value > 5):
+                        raise ValueError
+                book[key] = parsed_value
+            elif key in ('title', 'author', 'genre', 'image'):
+                parsed_value = str(value).strip()
+                if not parsed_value:
+                    raise ValueError
+                book[key] = parsed_value
+    except (TypeError, ValueError):
+        return jsonify({'message': 'Invalid book data. Check text fields, price, rating, and reviews.'}), 400
+
+    return jsonify({'message': 'Book updated successfully', 'book': book})
+
+@app.route('/api/books/<book_id>', methods=['DELETE'])
+def delete_book(book_id):
+    global books
+    book = next((b for b in books if b['id'] == book_id), None)
+    if not book:
+        return jsonify({'message': 'Book not found'}), 404
+
+    books = [b for b in books if b['id'] != book_id]
+    return jsonify({'message': 'Book deleted successfully'})
+
 if __name__ == '__main__':
-    print("🚀 Starting BookShelf Backend...")
-    print("📚 API: http://127.0.0.1:5000/api/books")
-    print("❤️ Health: http://127.0.0.1:5000/api/health")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
